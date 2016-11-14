@@ -1,39 +1,54 @@
 package DDG::Goodie::Base64;
+# ABSTRACT: Base64 <-> Unicode
 
+use strict;
 use DDG::Goodie;
-use MIME::Base64; 
+use Text::Trim;
+
+use MIME::Base64;
 use Encode;
 
-triggers startend => "base64";
+triggers start => "base64";
 
 zci answer_type => "base64_conversion";
-
-zci is_cached => 1;
+zci is_cached   => 1;
 
 handle remainder => sub {
-	return unless $_ =~ /^(encode|decode|)\s*(.*)$/i;
+    my ($command, $input) = query_components($_);
+    return unless $input;
 
-	my $command = $1 || '';
-	my $str = $2 || '';
-
-	if ($str) {
-
-		if ( $command && $command eq 'decode' ) {
-
-			$str = decode_base64($str);
-			$str = decode( "UTF-8", $str );
-
-			return "Base64 decoded: $str"; 
-		}
-		else {
-			$str = encode_base64( encode( "UTF-8", $str ) );
-
-			return "Base64 encoded: $str";
-		}
-
-	}
-
-	return;
+    my $output = perform_conversion($command, $input);
+    
+    my $operation = "Base64 $command";
+    return "$operation d: $output",
+      structured_answer => {
+          data => {
+              title => $output,
+              subtitle => "$operation: $input"
+          },
+          templates => {
+              group => 'text'
+          }
+    };
 };
+
+
+# Parse the query into its two components:
+# an optional command (encode or decode), 
+# and an input string.
+sub query_components {
+    my $query = shift;
+    $query =~ /^(?<command>encode|decode|)\s*(?<input>.*)$/i;
+    my $command = lc($+{'command'}) || 'encode';
+    return ($command, $+{'input'});
+}
+
+
+sub perform_conversion {
+    my ($command, $input) = @_;
+    return trim(decode("UTF-8", decode_base64($input))) if($command eq 'decode');
+    return trim(encode_base64(encode("UTF-8", $input)));
+}
+
 
 1;

@@ -1,19 +1,19 @@
 package DDG::Goodie::GoldenRatio;
+# ABSTRACT: find number related to the given number by the Golden Ratio.
 
+use strict;
 use DDG::Goodie;
 
 zci answer_type => "golden_ratio";
 
 zci is_cached => 1;
 
-triggers start => "golden"; # should be "golden ratio"
+triggers start => "golden ratio";
 
-handle query_parts => sub {
-    shift;
-    return unless lc(shift) eq "ratio";
-    my $input = join(' ', @_);
+handle remainder => sub {
+    my $input = $_;
     my $golden_ratio = (1 + sqrt(5)) / 2;
-    my $result = 0; 
+    my $result = 0;
 
     if ($input =~ /^(?:(?:(\?)\s*:\s*(\d+(?:\.\d+)?))|(?:(\d+(?:\.\d+)?)\s*:\s*(\?)))$/) {
         if ($1 && $1 eq "?") {
@@ -21,10 +21,10 @@ handle query_parts => sub {
             $result = $2 / $golden_ratio;
             return "Golden ratio: $result : $2";
         } elsif ($4 && $4 eq "?") {
-            # x : ? 
-            $result = $3 * $golden_ratio; 
+            # x : ?
+            $result = $3 * $golden_ratio;
             return "Golden ratio: $3 : $result";
-        } 
+        }
     }
     return;
 };

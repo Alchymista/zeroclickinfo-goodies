@@ -1,30 +1,34 @@
 package DDG::Goodie::PercentError;
+# ABSTRACT: find the percent error given accepted and experimental values
 
+use strict;
 use DDG::Goodie;
 
-triggers start => "percent", "%", "percent-error", "% error", "%err";
+triggers start => "percent error", "% error", "%err", "%error", "percenterror", "percent err", "%-error";
 
 zci answer_type => "percent_error";
 zci is_cached => 1;
-handle query_parts => sub {
-    shift;
-    shift if $_[0] eq 'error' || $_[0] eq 'err';
 
-    my $length = @_;
-    return unless $length == 2;
+handle remainder => sub {
+    my $length = length($_);
 
-    my ( $acc, $exp ) = @_;
-    $acc =~ s/[{},;\s]+//g;
-    $exp =~ s/[{},;\s]+//g;
+    my ( $acc, $exp ) = split /\s*[\s;,]\s*/, $_;
     return unless $acc =~ /^-?\d+?(?:\.\d+|)$/ && $exp =~ /^-?\d+?(?:\.\d+|)$/;
 
     my $diff = abs $acc - $exp;
     my $per = abs ($diff/$acc);
     my $err = $per*100;
-
-    my $html = qq(Accepted: $acc Experimental: $exp Error: <a href="javascript:;" onclick="document.x.q.value='$per';document.x.q.focus();">$err%</a>);
     
-    return "Accepted: $acc Experimental: $exp Error: $err%", html => $html;
+    return "Accepted: $acc Experimental: $exp Error: $err%",
+    structured_answer => {
+        data => {
+            title => "Error: $err%",
+            subtitle => "Accepted: $acc Experimental: $exp",
+        },
+        templates => {
+            group => 'text',
+        }
+    };
 };
 
 1;
